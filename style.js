@@ -1,11 +1,10 @@
-let pcInfo 
-let brandList = new Array()
-
 
 //GPUのブランドのリストを作成する
 
 
 function start(url,cpuOrGpu){
+    let pcInfo 
+    let brandList = []
     let section 
     let optionSelect
     console.log("cpu gpu:",cpuOrGpu)
@@ -60,6 +59,7 @@ function start(url,cpuOrGpu){
             //console.log("options-->",mSelect.options)
             //modelの選択肢の初期化
             let iniOptions = mSelect.options
+            mSelect.innerHTML =""
             for(let i=iniOptions.length-1;0<=i;--i){ 
                 mSelect.removeChild(iniOptions[i])
             }
@@ -104,8 +104,11 @@ let gpu_url = "https://api.recursionist.io/builder/computers?type=gpu"
 
 const array = []
 
+let brandList1 = new Array()
+let brandList2 = new Array()
 
-//start(cpu_url,"CPU")
+
+start(cpu_url,"CPU")
 start(gpu_url,"GPU")
 //ブランドを基にしたモデルの取り出し
 
