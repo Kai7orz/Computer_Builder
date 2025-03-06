@@ -1,0 +1,66 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat&display=swap');
+p{
+    font-family: 'Amatic SC', cursive;
+}
+
+
+body{
+    background-color: rgba(116, 116, 116, 0.641);
+}
+
+.myHead{
+    background-color: rgb(49, 49, 49);
+    padding:30px;
+    color:rgb(255, 255, 255);
+    margin-top:1%;
+    font-family: 'Amatic SC', cursive;
+}
+
+.myFont{
+    font-weight: bold;
+
+}
+
+.customSelect{
+    width:20%;
+}
+
+.customSelect1{
+    width:10%;
+}
+
+
+
+.btn--orange,
+a.btn--orange {
+  color: #fff;
+  background-color: #f4020a;
+}
+.btn--orange:hover,
+a.btn--orange:hover {
+  color: #fff;
+  background: #000000;
+}
+
+#step1{
+    margin:50px;
+}
+
+#step2{
+    margin:50px;
+}
+
+#step3{
+    margin:50px;
+}
+
+#step4{
+    margin:50px;
+}
+
+#result{
+    height:400px;
+    background-color:rgb(255, 255, 255);
+    padding:20px;
+}
