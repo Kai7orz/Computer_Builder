@@ -1,13 +1,193 @@
+function iniOption(){ //空のoption作成して返す
+        let iniOption = document.createElement("option")
+        iniOption.text = " "
+        iniOption.value = " "
+        return iniOption
+}
 
-//GPUのブランドのリストを作成する
+function getModel(pcInfo,brand){   //Brandに合致するModelの取得を行なう
+    let modelList = new Array()
+    
+    for( pcIdx in pcInfo){
+        if(brand == pcInfo[pcIdx].Brand){     //Brandが指定したものがmodelListに含まれていなければ追加
+           
+           
+           // モデルがまだmodelListに含まれていない場合のみ追加
+        if (!modelList.includes(pcInfo[pcIdx].Model)) {
+            modelList.push(pcInfo[pcIdx].Model);
+        }
+        }
+    }
 
+    return modelList
+
+}
+
+async function fetchInfo(url,section,optionSelect){
+    let brandList = []
+    let pcInfo 
+
+    fetch(url).then(response=>{         //fetch で JSON情報取得
+        return response.json()
+    }).then(
+        pcInfo=>{   
+
+            let select = document.getElementById(section)
+            let storageSizeTag = document.getElementById("storage-size")
+            let storageBrandTag = document.getElementById("storage-brand")
+            let storageModelTag = document.getElementById("storage-model")
+            let num = 0
+            let userStorage  //プルダウンメニューから選択された容量の記録
+            let userBrand   //プルダウンメニューから選択されたブランドの記録
+
+
+            if(section == "storage-select"){ //storageは，hdd,ssdの容量に関するリストを作成する
+                storageSizeTag.innerHTML = ""
+                storageBrandTag.innerHTML = ""
+                storageModelTag.innerHTML  = "" 
+
+                let storageList = new Set()
+
+                for( i in pcInfo){                  //取得したJSONから容量の情報を抽出して，重複なしのリスト(Set)を作成
+                   let s = pcInfo[i].Model.split(" ")
+                    
+                    if(s.at(-1) == "2016)" || s.at(-1)=="2017)"){
+                        storageList.add(s.at(-4))
+                    }
+                    else{
+                        storageList.add(s.at(-1))
+                    }
+                }
+
+                const convertToGB = (size) => { //sortするためのGB変換
+                    let num = parseFloat(size)
+                    return size.includes("TB") ? num * 1000 : num;
+                }
+                
+                let storageSizes = [...new Set(storageList)]     // ソート処理
+                .sort((a, b) => convertToGB(a) - convertToGB(b))
+    
+                for( idx in storageSizes){                          //storageのプルダウンメニューを作成・追加
+                    let pcSize = document.createElement("option")
+                    pcSize.text = storageSizes[idx]
+                    pcSize.value = storageSizes[idx]
+                    storageSizeTag.appendChild(pcSize)
+                }
+
+
+                storageSizeTag.addEventListener("change",(e)=>{               //選択した容量に合致するBrandを抽出する．
+                                                                              //Model を 取得したstorage include してるかつ，Brand が合致してるmodel をリスト化する
+                    let storageBrandList = new Set()
+                    userStorage = e.target.value //ユーザの決定したpc容量を保存する
+
+                    for( i in pcInfo){  //storageSizeに合致したBrandのリストを作成する
+                        let storageValue = pcInfo[i].Model.split(" ")
+                        if(storageValue.at(-4)==e.target.value){
+                            storageBrandList.add(pcInfo[i].Brand)
+                        }
+                        else if(pcInfo[i].Model.split(" ").at(-1) == e.target.value){
+                            storageBrandList.add(pcInfo[i].Brand)
+                        }
+
+                }
+
+                    storageBrandTag.appendChild(iniOption())
+                    for( brand of storageBrandList){ //Brandのリストを作成 Brand用のプルダウンメニューを追加する
+                        let storageBrand = document.createElement("option")
+                        storageBrand.text = brand
+                        storageBrand.value = brand                        
+                        storageBrandTag.appendChild(storageBrand)
+                    }
+                    
+                })
+
+                storageBrandTag.addEventListener("change",(e)=>{ //選択されたstoragesize,brandをもとにmodelを絞る
+                    let storageModelList = new Set()
+                    userBrand = e.target.value //ユーザの決定したBrand
+                    
+                    for( idx in pcInfo){
+
+                        let s = pcInfo[idx].Model.split(" ")
+                        let targetBrand = pcInfo[idx].Brand
+                      
+                        if(s.at(-4) == userStorage || s.at(-1) == userStorage){  //容量とブランドが合致していたらリストにmodelを追加していく
+                            if(targetBrand == userBrand){
+                                storageModelList.add(pcInfo[idx].Model)
+                            }
+                        }
+                    }
+
+                    storageModelTag.appendChild(iniOption())
+                    for( model of storageModelList){ //modelのプルダウンメニューの作成
+                        let storageModel = document.createElement("option")
+                        storageModel.text = model
+                        storageModel.value = model     
+                        storageModelTag.appendChild(storageModel)
+                    }
+                })
+                }  //ここまでがstorage用の処理
+            else{   //storage以外は下の処理を利用
+
+                let BrandList = new Set()
+
+                for( i in pcInfo){  //storageSizeに合致したBrandのリストを作成する
+                    console.log(pcInfo[i].Brand)
+                    BrandList.add(pcInfo[i].Brand)
+            }
+
+                select.appendChild(iniOption())
+                for( brand of BrandList){ //Brandのリストを作成 Brand用のプルダウンメニューを追加する
+                    let myBrand = document.createElement("option")
+                    myBrand.text = brand
+                    myBrand.value = brand                        
+                    select.appendChild(myBrand)
+                }
+
+            select.addEventListener("change",(e)=>{        //brandが選択された際の動作(modelの取得)
+                let brand = e.target.value        
+                let modelList 
+
+            modelList = getModel(pcInfo,brand)     //brandに沿ったmodelリストの取得
+
+            //モデルリストによってModel選択肢の初期化・変更を行う
+            let mSelect = document.getElementById(optionSelect)
+
+            //modelの選択肢の初期化
+            mSelect.innerHTML =""
+
+            //リストが1つしかないとき，選択判定がされなかったので，応急処置として空のoptionをつける
+            mSelect.appendChild(iniOption())
+            for( midx in modelList){
+                let addModel = document.createElement("option")
+                addModel.text = modelList[midx]
+                addModel.value = modelList[midx] 
+                mSelect.appendChild(addModel)
+            }
+        }
+        )
+        //modelが選択されたら，ベンチマークスコアを返すようにする        
+        let modelSelect = document.getElementById(optionSelect)
+
+        modelSelect.addEventListener("change",(e)=>{
+            //pcInfoで一致するmodel名から，benchmark値を取り出す    
+        for(i in pcInfo){
+                if(pcInfo[i].Model == e.target.value){
+                    console.log("component power:",e.target.value," benchmark:",pcInfo[i].Benchmark)
+                    return (pcInfo[i].Benchmark)
+                }
+            }        
+        }
+        )
+            }
+        }
+        )
+
+}
 
 async function start(url,componentType){
-
     //error 処理を加える
     return new Promise(async(resolve,reject)=>{
-    let pcInfo 
-    let brandList = []
+    
     let section 
     let optionSelect
     let numberOfRam = 0
@@ -49,132 +229,25 @@ async function start(url,componentType){
         })
     }
 
-    if(section == "storage-select"){ //storageの場合の設定
+    if(section == "storage-select"){ //storageの場合の設定 storageだけ利用するurlを分岐させる必要があるためif-elseで分けてfetchしている
+        
         let storageTag = document.getElementById("storage-type")
         let storageType 
+
         storageTag.addEventListener("change",(e)=>{
-            storageType =  e.target.value
+            url = storage_url + e.target.value
+            console.log("url-->",url)
+            fetchInfo(url,section,optionSelect)        
         })
-
-        console.log("storageType:",storageType)
-        //url += storageType
-        url += "hdd"
-    
-    //pcInfo からssd に該当する容量リストの作成・ブランドリストの作成・上記2つに該当するモデルリストの作成
-    
-    }
-
-    
-
-
-
-    fetch(url).then(response=>{         //fetch で JSON情報取得
-        return response.json()
-    }).then(
-        answer=>{
-            console.log("section ",section)
-            let select = document.getElementById(section)
-            let num = 0
-            pcInfo = answer
-
-            if(section == "storage-select"){ //storageに関しては，hdd,ssdの容量に関するリストを作成する必要がある．
-                //pcInfo のmodel を空白split して最後の要素を抽出して、それが作成中のリストに含まれていなければ追加していく．
-
-
-
-            }
-
-
-            for(ans in answer){　　//Brandのリストを作成 セレクトタグへオプションを追加する
-                    let flag = true
-                    for( b in brandList){
-                        if(brandList[b] == answer[ans].Brand){
-                            flag = false
-                        }
-                    }
-                    if(flag == true){                       
-                        brandList.push(answer[ans].Brand)
-                        let addOp = document.createElement("option")
-    
-                        addOp.text = answer[ans].Brand
-                        addOp.value = num
-                        select.appendChild(addOp)
-                        num += 1
-                    }
-            }
-
-            select.addEventListener("change",(e)=>{        //brandが選択された際の動作(modelの取得)
-                let idx = e.target.value        
-                let modelList 
-            
-                //console.log("idx::",idx)
-
-
-                modelList = getModel(pcInfo,brandList[idx])     //brandに沿ったmodelリストの取得
-                //console.log("modellist",modelList)
-
-            //モデルリストによってModel選択肢の初期化・変更を行う
-            let mSelect = document.getElementById(optionSelect)
-            let mnum = 0 //modellistようのインデックス割り当ての番号
-            //console.log("options-->",mSelect.options)
-            //modelの選択肢の初期化
-            let iniOptions = mSelect.options
-            mSelect.innerHTML =""
-            for(let i=iniOptions.length-1;0<=i;--i){ 
-                mSelect.removeChild(iniOptions[i])
-            }
                 
-            for( midx in modelList){
-                let addModel = document.createElement("option")
-                addModel.text = modelList[midx]
-                addModel.value = modelList[midx] 
-                mSelect.appendChild(addModel)
-                mnum += 1
-            }
-
-            
-
-        }
-        )
-        //modelが選択されたら，ベンチマークスコアを返すようにする（非同期関数としてこの関数を定義しないといけない？）
-        
-        let modelSelect = document.getElementById(optionSelect)
-
-        modelSelect.addEventListener("change",(e)=>{
-            //pcInfoで一致するmodel名から，benchmark値を取り出す    
-        for(i in pcInfo){
-                if(pcInfo[i].Model == e.target.value){
-                    console.log("component power:",e.target.value," benchmark:",pcInfo[i].Benchmark)
-                    resolve(pcInfo[i].Benchmark)
-                    //return pcInfo[i].Benchmark
-                }
-            }        
-        }
-        )
-
-        
-            }
-        )
-    })
-}
-
-function getModel(pcInfo,brand){
-    let modelList = new Array()
-    
-    for( pcIdx in pcInfo){
-        if(brand == pcInfo[pcIdx].Brand){     //ブランドが指定したもの　and 　modelListに含まれていなければ追加
-            console.log("designated Brand:",brand)
-           console.log("PcInfo Brand:",pcInfo[pcIdx].Brand)
-        // モデルがまだmodelListに含まれていない場合のみ追加
-        if (!modelList.includes(pcInfo[pcIdx].Model)) {
-            modelList.push(pcInfo[pcIdx].Model);
-        }
-        }
+    }else{
+        fetchInfo(url,section,optionSelect)
     }
 
 
-    return modelList
+//    console.log(be)
 
+    })
 }
 
 
