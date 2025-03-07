@@ -1,3 +1,6 @@
+let BenchMarkMap = new Map()
+let numberOfRam = 0
+
 function iniOption(){ //空のoption作成して返す
         let iniOption = document.createElement("option")
         iniOption.text = " "
@@ -23,9 +26,25 @@ function getModel(pcInfo,brand){   //Brandに合致するModelの取得を行な
 
 }
 
+function calculateScore(weight){
+
+    let i = 0
+    let score = 0
+    for( let [key,value] of BenchMarkMap){
+        if(key=="ram-select"){
+            score +=numberOfRam*value*weight[i]
+        }
+        else{
+            score += value*weight[i]
+        }
+        i+=1   
+    }
+    return score
+}
+
+
+
 async function fetchInfo(url,section,optionSelect){
-    let brandList = []
-    let pcInfo 
 
     fetch(url).then(response=>{         //fetch で JSON情報取得
         return response.json()
@@ -35,7 +54,7 @@ async function fetchInfo(url,section,optionSelect){
             let select = document.getElementById(section)
             let storageSizeTag = document.getElementById("storage-size")
             let storageBrandTag = document.getElementById("storage-brand")
-            let storageModelTag = document.getElementById("storage-model")
+            let storageModelTag = document.getElementById("storage-model-select")
             let num = 0
             let userStorage  //プルダウンメニューから選択された容量の記録
             let userBrand   //プルダウンメニューから選択されたブランドの記録
@@ -67,6 +86,7 @@ async function fetchInfo(url,section,optionSelect){
                 let storageSizes = [...new Set(storageList)]     // ソート処理
                 .sort((a, b) => convertToGB(a) - convertToGB(b))
     
+                    storageSizeTag.appendChild(iniOption())
                 for( idx in storageSizes){                          //storageのプルダウンメニューを作成・追加
                     let pcSize = document.createElement("option")
                     pcSize.text = storageSizes[idx]
@@ -121,17 +141,26 @@ async function fetchInfo(url,section,optionSelect){
                     for( model of storageModelList){ //modelのプルダウンメニューの作成
                         let storageModel = document.createElement("option")
                         storageModel.text = model
-                        storageModel.value = model     
+                        storageModel.value = model    
                         storageModelTag.appendChild(storageModel)
                     }
+
+                            //modelがchangeしたらmap のベンチマーク値変更する
+                    storageModelTag.addEventListener("change",(e)=>{
+                        for( p in pcInfo){ 
+                            if(pcInfo[p].Model == e.target.value){{
+                                BenchMarkMap.set(section,pcInfo[p].Benchmark)
+                            }}
+                        }
+                    })
                 })
                 }  //ここまでがstorage用の処理
             else{   //storage以外は下の処理を利用
 
                 let BrandList = new Set()
 
+
                 for( i in pcInfo){  //storageSizeに合致したBrandのリストを作成する
-                    console.log(pcInfo[i].Brand)
                     BrandList.add(pcInfo[i].Brand)
             }
 
@@ -161,6 +190,7 @@ async function fetchInfo(url,section,optionSelect){
                 let addModel = document.createElement("option")
                 addModel.text = modelList[midx]
                 addModel.value = modelList[midx] 
+
                 mSelect.appendChild(addModel)
             }
         }
@@ -172,12 +202,19 @@ async function fetchInfo(url,section,optionSelect){
             //pcInfoで一致するmodel名から，benchmark値を取り出す    
         for(i in pcInfo){
                 if(pcInfo[i].Model == e.target.value){
-                    console.log("component power:",e.target.value," benchmark:",pcInfo[i].Benchmark)
                     return (pcInfo[i].Benchmark)
                 }
             }        
         }
         )
+
+        modelSelect.addEventListener("change",(e)=>{
+            for( p in pcInfo){ 
+                if(pcInfo[p].Model == e.target.value){{
+                    BenchMarkMap.set(section,pcInfo[p].Benchmark)
+                }}
+            }
+        })
             }
         }
         )
@@ -190,7 +227,6 @@ async function start(url,componentType){
     
     let section 
     let optionSelect
-    let numberOfRam = 0
 
     if(componentType.toLowerCase() === "gpu"){
        section = "gpu-select" 
@@ -225,27 +261,20 @@ async function start(url,componentType){
     
         ramTag.addEventListener("change",(e)=>{
             numberOfRam = e.target.value
-            console.log("number of ram :" ,numberOfRam)
         })
     }
 
     if(section == "storage-select"){ //storageの場合の設定 storageだけ利用するurlを分岐させる必要があるためif-elseで分けてfetchしている
-        
-        let storageTag = document.getElementById("storage-type")
-        let storageType 
 
+        let storageTag = document.getElementById("storage-type")
         storageTag.addEventListener("change",(e)=>{
             url = storage_url + e.target.value
-            console.log("url-->",url)
             fetchInfo(url,section,optionSelect)        
         })
                 
     }else{
         fetchInfo(url,section,optionSelect)
     }
-
-
-//    console.log(be)
 
     })
 }
@@ -281,25 +310,19 @@ const storageValue = async () =>{
     console.log(results)
 })();
 
+let pushButton = document.getElementById("push-button")
+pushButton.addEventListener("click",()=>{
+    //buttonクリック時にモデルの選択された値を取得する
+    
+    let cpu = document.getElementById("cpu-model-select")
+    let gpu = document.getElementById("gpu-model-select")
+    let ram = document.getElementById("ram-model-select")
+    let storage = document.getElementById("storage-model-select")
 
-
-//start(gpu_url,"GPU")
-//ブランドを基にしたモデルの取り出し
-
-
-//モデル名からCPU,memoryの情報を引き出す必要がある
-/*
-    先に画面を作成する ok
-    input タグで値を仮置き ok
-    サーバからfetchする ok
-    fetchした値をoptionに表示する ok
-    ベンチマーク値を取得する
-    インプットから得た値を構造体computerに保存
-    閾値条件によってベンチマーク値
-    リザルト画面を作成する
-
-    brand入力したら，brandが合致するmodelのみfetchして取得する
-*/
-
-
-
+    let gamingWeight = [0.25,0.6,0.125,0.025]   //cpu,gpu,ram,storageの順の重み
+    let workWeight = [0.6,0.25,0.1,0.05]
+    let gamingScore = calculateScore(gamingWeight) 
+    let workScore = calculateScore(workWeight)
+    console.log("gamingScore",gamingScore)
+    console.log("workScore",workScore)
+})
