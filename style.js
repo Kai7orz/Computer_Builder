@@ -94,7 +94,6 @@ async function fetchInfo(url,section,optionSelect){
                     storageSizeTag.appendChild(pcSize)
                 }
 
-
                 storageSizeTag.addEventListener("change",(e)=>{               //選択した容量に合致するBrandを抽出する．
                                                                               //Model を 取得したstorage include してるかつ，Brand が合致してるmodel をリスト化する
                     let storageBrandList = new Set()
@@ -325,4 +324,11 @@ pushButton.addEventListener("click",()=>{
     let workScore = calculateScore(workWeight)
     console.log("gamingScore",gamingScore)
     console.log("workScore",workScore)
+
+    let result = document.getElementById("result")
+    let score_result = document.createElement("div")
+
+    score_result.innerHTML = "gaming score: " + Math.floor(gamingScore) + " work score: "+ Math.floor(workScore)
+    result.appendChild(score_result)
+
 })
